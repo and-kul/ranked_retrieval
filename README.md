@@ -89,9 +89,9 @@ With argument `--verbose` you can see full text of documents.
 Argument `--limit` limits, how many results to show (default is 20)
 
 ### Implemenation details
-For stemming again *SnowballStemmer* is used. Weighting scheme for ranked retrieval is lnc.ltc.
+For stemming again *SnowballStemmer* is used. Weighting scheme for ranked retrieval is lnc.ltc:
 
-1. Before asking any queries the system pre-calculates term-document weights, using formula `1 + log10(term_frequency)` and normalizes it by document vector's length (for cosine similarity). It is done only for present term-document pairs from **index.json**, and results are stored in a hash-map (memory efficient, comparing to two-dimensional array) for fast future accesses. Also, inverse document frequency `idf` is computed for all terms. All pre-computations require linear time depending on the present term-document pairs from **index.json**.
+1. Before asking any queries the system pre-calculates term-document weights, using formula `1 + log10(term_frequency)` and normalizes it by document vector's length (for cosine similarity). It is done only for present term-document pairs from **index.json**, and results are stored in a HashMap (memory efficient, comparing to two-dimensional array) for fast future accesses. Also, inverse document frequency `idf` is computed for all terms. All pre-computations require linear time depending on the present term-document pairs from **index.json**.
 
 2. When free text query is typed, the system computes term-query weights using formula `(1 + log10(term_frequency_in_query)) * idf(term)` and normalizes them too. It requires linear time depending on the query length. 
 
@@ -105,6 +105,107 @@ For stemming again *SnowballStemmer* is used. Weighting scheme for ranked retrie
 
 4. Documents, are sorted by their scores (*O(N log N)*, where *N* is the number of documents, containing query terms) to show top relevant.
 
+## Evaluation
+Test set: 100 randomly choosen documents from LISA document collection. **index_builder/documents.json** contains exactly these 100 documents.
+
+Test query: ***information retrieval***
+
+Manually determined relevance for this query of all 100 documents:
+
+| document_id   | relevant?     | document_id   | relevant?     |
+|---------------|---------------|---------------|---------------|
+|2       | No     |27      | No     |
+|158     | No     |214     | No     |
+|293     | No     |**398** | **Yes**|
+|426     | No     |440     | No     |
+|473     | No     |703     | No     |
+|811     | No     |951     | No     |
+|953     | No     |1019    | No     |
+|1020    | No     |1088    | No     |
+|1089    | No     |1160    | No     |
+|1238    | No     |1305    | No     |
+|1319    | No     |1461    | No     |
+|1489    | No     |1491    | No     |
+|1625    | No     |1675    | No     |
+|1709    | No     |1734    | No     |
+|**1789**| **Yes**|1830    | No     |
+|1854    | No     |1900    | No     |
+|1912    | No     |2151    | No     |
+|2257    | No     |2311    | No     |
+|2359    | No     |2384    | No     |
+|2458    | No     |2487    | No     |
+|2493    | No     |2507    | No     |
+|2525    | No     |2643    | No     |
+|2668    | No     |2685    | No     |
+|**2789**| **Yes**|**2790**| **Yes**|
+|2795    | No     |2808    | No     |
+|2843    | No     |**2882**| **Yes**|
+|2883    | No     |2981    | No     |
+|3066    | No     |3182    | No     |
+|3187    | No     |3258    | No     |
+|**3388**| **Yes**|3441    | No     |
+|3444    | No     |3511    | No     |
+|3573    | No     |3586    | No     |
+|3748    | No     |3754    | No     |
+|3814    | No     |**3910**| **Yes**|
+|3955    | No     |4019    | No     |
+|4034    | No     |4046    | No     |
+|4117    | No     |4148    | No     |
+|4231    | No     |4249    | No     |
+|4369    | No     |4445    | No     |
+|4534    | No     |4535    | No     |
+|4554    | No     |4747    | No     |
+|4767    | No     |4914    | No     |
+|4918    | No     |4941    | No     |
+|5023    | No     |5081    | No     |
+|5300    | No     |5421    | No     |
+|5456    | No     |5522    | No     |
+|5578    | No     |5661    | No     |
+|5711    | No     |5803    | No     |
+|5840    | No     |5968    | No     |
+|5971    | No     |5990    | No     |
+
+Let's test the system:
+
+```
+PS C:\workspace\ranked_retrieval\search> python main.py --limit 20
+> information retrieval
+score=0.3585, document_id=1789 <- relevant
+score=0.3412, document_id=2790 <- relevant
+score=0.3352, document_id=3388 <- relevant
+score=0.3332, document_id=398  <- relevant
+score=0.3196, document_id=2882 <- relevant
+score=0.3021, document_id=2789 <- relevant
+score=0.2221, document_id=3182
+score=0.1807, document_id=3814
+score=0.1798, document_id=5990
+score=0.1661, document_id=3910 <- relevant
+score=0.1558, document_id=4369
+score=0.1517, document_id=5803
+score=0.0874, document_id=3258
+score=0.0847, document_id=1734
+score=0.0831, document_id=3748
+score=0.0797, document_id=4747
+score=0.0783, document_id=2151
+score=0.0773, document_id=2257
+score=0.0746, document_id=4046
+score=0.0728, document_id=3511
+```
+
+It has found all relevant documents.
+
+### Metrics on top 20
+
+Confusion matrix:
+
+| | |
+|-|-|
+|7| 0 |
+|13| 80 |
+
+* *Precision = 7 / 20 = 0.35*
+* *Recall = 7 / 7 = 1*
+* *F1 Score = 2 * (Precision * Recall) / (Precision + Recall) = 0.519*
 
 ## Screenshots
 To see working functionality, check out **Screenshots** directory
