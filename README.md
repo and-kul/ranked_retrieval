@@ -88,8 +88,23 @@ IN THE LAST DECADE THE DEMANDS OF SOCIETY FOR INFORMATION HAVE UNDERGONE A GREAT
 With argument `--verbose` you can see full text of documents.
 Argument `--limit` limits, how many results to show (default is 20)
 
+### Implemenation details
+For stemming again *SnowballStemmer* is used. Weighting scheme for ranked retrieval is lnc.ltc.
 
-For stemming again *SnowballStemmer* is used.
+1. Before asking any queries the system pre-calculates term-document weights, using formula `1 + log10(term_frequency)` and normalizes it by document vector's length (for cosine similarity). It is done only for present term-document pairs from **index.json**, and results are stored in a hash-map (memory efficient, comparing to two-dimensional array) for fast future accesses. Also, inverse document frequency `idf` is computed for all terms. All pre-computations require linear time depending on the present term-document pairs from **index.json**.
+
+2. When free text query is typed, the system computes term-query weights using formula `(1 + log10(term_frequency_in_query)) * idf(term)` and normalizes them too. It requires linear time depending on the query length. 
+
+3. To efficiently calculate document scores term-at-a-time approach is used for query terms: 
+    ```python
+    for term, query_weight in term_query_weights.items():
+        for document_id, document_weight in term_document_weights[term].items():
+            from_document_id_to_score[document_id] += query_weight * document_weight
+    ```
+    Time complexity will linearly depend on number of term-document pairs (from pre-computed HashMap) for query terms.
+
+4. Documents, are sorted by their scores (*O(N log N)*, where *N* is the number of documents, containing query terms) to show top relevant.
+
 
 ## Screenshots
 To see working functionality, check out **Screenshots** directory
